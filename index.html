@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 专家技能库 - 212个即插即用智能体</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #222230;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b7b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --border: rgba(255, 255, 255, 0.08);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --tag-bg: rgba(99, 102, 241, 0.15);
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            padding: 60px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 400px;
+            background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .badge {
+            display: inline-block;
+            background: var(--tag-bg);
+            color: var(--accent);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        /* Search */
+        .search-container {
+            max-width: 800px;
+            margin: -40px auto 40px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-box svg {
+            width: 24px;
+            height: 24px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .search-box input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: inherit;
+        }
+
+        .search-box input::placeholder {
+            color: var(--text-muted);
+        }
+
+        /* Category Tabs */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 0 20px;
+            max-width: 1400px;
+            margin: 0 auto 30px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .tab .count {
+            margin-left: 6px;
+            opacity: 0.7;
+        }
+
+        /* Grid */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        /* Installation Section */
+        .install-section {
+            background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-primary) 100%);
+            padding: 80px 20px;
+            margin-top: 60px;
+            border-top: 1px solid var(--border);
+        }
+
+        .install-section .container {
+            max-width: 1200px;
+            padding: 0;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .section-desc {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .install-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .install-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .install-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .install-icon {
+            font-size: 28px;
+            margin-bottom: 12px;
+        }
+
+        .install-card h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+        }
+
+        .code-block code {
+            font-family: 'Fira Code', 'Consolas', monospace;
+            color: var(--success);
+            word-break: break-all;
+        }
+
+        .install-note {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .install-note p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .install-note p:last-child {
+            margin-bottom: 0;
+        }
+
+        .install-note code {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--tag-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .card-name {
+            font-size: 13px;
+            color: var(--accent);
+            font-family: monospace;
+        }
+
+        .card-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .activation {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .activation code {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .copy-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: inherit;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .copy-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Tags */
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            color: var(--text-muted);
+        }
+
+        /* Empty State */
+        .empty {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-card-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-body h3 {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 12px;
+        }
+
+        .modal-body h3:first-child {
+            margin-top: 0;
+        }
+
+        .modal-body p, .modal-body li {
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .modal-body pre {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            overflow-x: auto;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+
+        .modal-body code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .modal-body ul {
+            padding-left: 20px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            background: var(--bg-secondary);
+        }
+
+        .footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 32px;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="badge">212+ 智能体专家</span>
+            <h1>AI 专家技能库</h1>
+            <p class="subtitle">即插即用的 AI 专家角色，覆盖工程、设计、营销、学术等 18 个领域</p>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">212</div>
+                    <div class="stat-label">智能体总数</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">18</div>
+                    <div class="stat-label">专业领域</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">46</div>
+                    <div class="stat-label">中国市场原创</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="search-container">
+        <div class="search-box">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="search" placeholder="搜索技能名称或描述...">
+        </div>
+    </div>
+
+    <div class="category-tabs" id="tabs">
+        <button class="tab active" data-category="all">全部<span class="count">212</span></button>
+        <button class="tab" data-category="engineering">工程开发<span class="count">28</span></button>
+        <button class="tab" data-category="design">设计创意<span class="count">9</span></button>
+        <button class="tab" data-category="marketing">市场营销<span class="count">40</span></button>
+        <button class="tab" data-category="product">产品管理<span class="count">5</span></button>
+        <button class="tab" data-category="academic">学术研究<span class="count">6</span></button>
+        <button class="tab" data-category="game">游戏开发<span class="count">15</span></button>
+        <button class="tab" data-category="finance">金融财务<span class="count">3</span></button>
+        <button class="tab" data-category="hr">人力资源<span class="count">2</span></button>
+        <button class="tab" data-category="legal">法务合规<span class="count">2</span></button>
+        <button class="tab" data-category="spatial">空间计算<span class="count">5</span></button>
+        <button class="tab" data-category="specialized">专项专家<span class="count">25</span></button>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="empty" style="display:none;">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p>未找到匹配的技能</p>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeModal()">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <div class="card-header">
+                    <div class="card-icon" id="modal-icon"></div>
+                    <div>
+                        <div class="card-title" id="modal-title"></div>
+                        <div class="card-name" id="modal-name"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">已复制激活指令！</div>
+
+    <!-- Installation Section -->
+    <div class="install-section">
+        <div class="container">
+            <h2 class="section-title">🚀 快速安装到你的 AI 工具</h2>
+            <p class="section-desc">支持 16 种主流 AI 编程工具，一键安装即插即用</p>
+            
+            <div class="install-grid">
+                <div class="install-card">
+                    <div class="install-icon">🌟</div>
+                    <h3>Claude Code</h3>
+                    <div class="code-block">
+                        <code>./scripts/install.sh --tool claude-code</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🔷</div>
+                    <h3>OpenClaw</h3>
+                    <div class="code-block">
+                        <code>./scripts/install.sh --tool openclaw</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">💎</div>
+                    <h3>Cursor</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool cursor<br>./scripts/install.sh --tool cursor</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🐂</div>
+                    <h3>Trae</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool trae<br>./scripts/install.sh --tool trae</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🌊</div>
+                    <h3>Windsurf</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool windsurf<br>./scripts/install.sh --tool windsurf</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🦄</div>
+                    <h3>Aider</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool aider<br>./scripts/install.sh --tool aider</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🔷</div>
+                    <h3>WorkBuddy</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool workbuddy<br>./scripts/install.sh --tool workbuddy</code>
+                    </div>
+                </div>
+                <div class="install-card">
+                    <div class="install-icon">🌐</div>
+                    <h3>其他工具</h3>
+                    <div class="code-block">
+                        <code>./scripts/convert.sh --tool &lt;tool&gt;<br>./scripts/install.sh --tool &lt;tool&gt;</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="install-note">
+                <p>💡 <strong>完整安装：</strong><code>git clone https://github.com/jnMetaCode/agency-agents-zh.git && cd agency-agents-zh && ./scripts/install.sh</code></p>
+                <p>📦 支持工具：Claude Code · OpenClaw · Cursor · Trae · Windsurf · Copilot · Aider · Kiro · Qwen · Codex · Gemini CLI · DeerFlow · WorkBuddy · Hermes Agent · Antigravity · OpenCode</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>基于 <a href="https://github.com/jnMetaCode/agency-agents-zh" target="_blank">agency-agents-zh</a> 构建 · 212个即插即用AI专家角色</p>
+    </footer>
+
+    <script>
+        const skills = [
+            {name: "academic-anthropologist", icon: "🏛️", category: "academic", title: "人类学家", desc: "文化体系、仪式、亲属关系、信仰系统和民族志方法专家——构建有生活气息而非凭空捏造的、文化上连贯自洽的社会", activation: "用人类学家模式帮我分析这个文化现象"},
+            {name: "academic-geographer", icon: "🌍", category: "academic", title: "地理学家", desc: "自然地理与人文地理、气候系统、制图学和空间分析专家——构建地理上连贯自洽的世界，使地形、气候、资源和聚落模式在科学上合理", activation: "用地理学家视角分析这个区域的地理特征"},
+            {name: "academic-historian", icon: "📜", category: "academic", title: "历史学家", desc: "历史分析、分期、物质文化和史学方法专家——验证历史一致性，以扎根于一手和二手资料的真实时代细节丰富设定", activation: "用历史学家思维帮我梳理这段历史脉络"},
+            {name: "academic-narratologist", icon: "📖", category: "academic", title: "叙事学家", desc: "叙事理论、故事结构、人物弧线和文学分析专家——基于从普罗普到坎贝尔再到现代叙事学的成熟框架提供建议", activation: "用叙事学家角度帮我优化这个故事结构"},
+            {name: "academic-psychologist", icon: "🧠", category: "academic", title: "心理学家", desc: "人类行为、人格理论、动机和认知模式专家——基于临床和研究框架构建心理上可信的角色和互动", activation: "用心理学家视角分析这个角色心理"},
+            {name: "academic-study-planner", icon: "📚", category: "academic", title: "学习规划师", desc: "面向中国考生和终身学习者的个性化学习规划专家，精通考研、考公、司法考试、CPA 等重大考试的备考策略", activation: "帮我制定一个考研备考计划"},
+            {name: "accounts-payable-agent", icon: "💰", category: "finance", title: "应付账款智能体", desc: "自主支付处理专家，负责执行供应商付款、承包商发票和定期账单，支持加密货币、法币、稳定币等多种支付通道", activation: "用支付专家模式帮我审核这笔付款"},
+            {name: "agentic-identity-trust", icon: "🔐", category: "specialized", title: "身份信任架构师", desc: "为自主运行的 AI 智能体设计身份认证和信任验证体系，确保智能体能证明自己是谁、被授权做什么", activation: "用身份架构师思维设计这个AI系统的信任机制"},
+            {name: "agents-orchestrator", icon: "🎭", category: "specialized", title: "智能体编排大师", desc: "自主流水线管理者，负责编排整个开发工作流。你是这个流程的领导者", activation: "用编排大师模式协调这个多智能体任务"},
+            {name: "automation-governance-architect", icon: "⚖️", category: "specialized", title: "自动化治理架构师", desc: "为自主AI智能体建立治理框架、审计机制和问责制度", activation: "用治理架构师思维设计这个AI项目的监管机制"},
+            {name: "blender-addon-engineer", icon: "🎨", category: "engineering", title: "Blender插件工程师", desc: "Python Blender插件开发专家，掌握API、界面设计和自动化工具创建", activation: "用Blender插件工程师模式开发这个功能"},
+            {name: "blockchain-security-auditor", icon: "⛓️", category: "specialized", title: "区块链安全审计师", desc: "智能合约和区块链安全专家，进行代码审计、漏洞检测和安全评估", activation: "用安全审计师模式审查这份智能合约"},
+            {name: "compliance-auditor", icon: "📋", category: "legal", title: "合规审计师", desc: "法规合规性评估专家，审查业务流程是否符合 GDPR、HIPAA、SOX 等监管要求", activation: "用合规审计师模式检查这个项目的合规性"},
+            {name: "corporate-training-designer", icon: "🎓", category: "hr", title: "企业培训设计师", desc: "企业培训课程开发专家，设计技术培训、领导力发展、技能提升等学习项目", activation: "用培训设计师模式设计这个技能培训方案"},
+            {name: "data-consolidation-agent", icon: "📊", category: "specialized", title: "数据整合专家", desc: "跨来源数据聚合与清洗专家，处理数据孤岛问题，实现数据统一视图", activation: "用数据专家模式帮我整合这些数据源"},
+            {name: "design-brand-guardian", icon: "🛡️", category: "design", title: "品牌守护者", desc: "品牌一致性守护者，确保所有触点的视觉识别和调性统一", activation: "用品牌守护者视角审查这个设计方案"},
+            {name: "design-image-prompt-engineer", icon: "✨", category: "design", title: "图像提示词工程师", desc: "AI图像生成提示词优化专家，擅长编写Midjourney、Stable Diffusion等工具的精准提示词", activation: "帮我写一个生成这个效果的AI绘画提示词"},
+            {name: "design-inclusive-visuals-specialist", icon: "♿", category: "design", title: "包容性设计专家", desc: "无障碍和包容性设计专家，确保设计满足WCAG标准，服务所有用户群体", activation: "用包容性设计原则审查这个界面"},
+            {name: "design-ui-designer", icon: "🎨", category: "design", title: "UI设计师", desc: "用户界面设计专家，专注于视觉设计、交互设计和用户体验优化", activation: "用UI设计师模式设计这个界面"},
+            {name: "design-ux-architect", icon: "🏗️", category: "design", title: "UX架构师", desc: "用户体验架构专家，设计用户旅程、信息架构和交互流程", activation: "用UX架构师思维优化这个产品体验"},
+            {name: "design-ux-researcher", icon: "🔍", category: "design", title: "UX研究员", desc: "用户研究专家，进行用户访谈、可用性测试和数据分析以指导设计决策", activation: "用UX研究员方法分析目标用户需求"},
+            {name: "design-visual-storyteller", icon: "🎬", category: "design", title: "视觉叙事设计师", desc: "数据和品牌故事可视化专家，将复杂信息转化为引人入胜的视觉叙事", activation: "帮我设计这个数据的故事化呈现方式"},
+            {name: "design-whimsy-injector", icon: "🎭", category: "design", title: "趣味创意注入师", desc: "为产品注入趣味性和人情味，在功能和情感之间创造愉悦的微交互和彩蛋", activation: "为这个功能设计一些有趣的微交互"},
+            {name: "guizang-ppt-skill", icon: "📑", category: "design", title: "杂志风网页 PPT 生成器", desc: "生成电子杂志 × 电子墨水风格的横向翻页网页 PPT，含 WebGL 流体背景、衬线标题、章节幕封、数据大字报等模板，适用于分享/演讲/发布会", activation: "用杂志风帮我做一个产品发布会网页 PPT，主题是XXX"},
+            {name: "engineering-ai-data-remediation-engineer", icon: "🔧", category: "engineering", title: "AI数据修复工程师", desc: "AI训练数据质量提升专家，修复数据标注错误、填充缺失值、解决数据不一致问题", activation: "用数据修复工程师模式清理这个数据集"},
+            {name: "engineering-ai-engineer", icon: "🤖", category: "engineering", title: "AI工程师", desc: "机器学习和深度学习系统开发专家，构建模型训练pipeline和推理服务", activation: "用AI工程师模式帮我设计这个机器学习系统"},
+            {name: "engineering-autonomous-optimization-architect", icon: "⚡", category: "engineering", title: "自主优化架构师", desc: "AI自我改进系统设计专家，构建监控→评估→优化闭环的自主优化框架", activation: "设计一个AI系统的自主优化机制"},
+            {name: "engineering-backend-architect", icon: "🏗️", category: "engineering", title: "后端架构师", desc: "分布式系统设计专家，设计高可用、可扩展的服务器端架构", activation: "用后端架构师思维设计这个系统架构"},
+            {name: "engineering-code-reviewer", icon: "🔍", category: "engineering", title: "代码审查专家", desc: "代码质量把控专家，进行深度代码审查，发现bug、优化点、安全漏洞", activation: "用代码审查专家模式审查这段代码"},
+            {name: "engineering-database-architect", icon: "🗄️", category: "engineering", title: "数据库架构师", desc: "数据库设计与管理专家，精通SQL/NoSQL、数据建模、性能优化", activation: "用数据库架构师模式优化这个数据模型"},
+            {name: "engineering-devops-architect", icon: "🚀", category: "engineering", title: "DevOps架构师", desc: "CI/CD、容器化、基础设施即代码专家，构建现代化部署流水线", activation: "设计这个项目的DevOps流水线方案"},
+            {name: "engineering-frontend-developer", icon: "💻", category: "engineering", title: "前端开发者", desc: "现代Web技术专家，精通React/Vue/Angular、响应式设计、性能优化", activation: "用前端开发者模式帮我构建这个组件"},
+            {name: "engineering-fullstack-developer", icon: "🌐", category: "engineering", title: "全栈开发者", desc: "从前端到后端、数据库到部署的全栈开发专家", activation: "用全栈开发者模式完成这个功能模块"},
+            {name: "engineering-ios-developer", icon: "📱", category: "engineering", title: "iOS开发者", desc: "Swift/Objective-C开发专家，构建原生iOS应用，遵循Apple设计规范", activation: "用iOS开发者模式帮我开发这个App功能"},
+            {name: "engineering-mobile-crossplatform-developer", icon: "📲", category: "engineering", title: "跨平台移动开发者", desc: "React Native/Flutter专家，构建同时运行在iOS和Android上的跨平台应用", activation: "用跨平台开发者模式开发这个移动应用"},
+            {name: "engineering-platform-engineer", icon: "⚙️", category: "engineering", title: "平台工程师", desc: "内部开发者平台和工具链构建专家，提升工程团队效率", activation: "帮我设计这个团队的开发者平台"},
+            {name: "engineering-python-backend-developer", icon: "🐍", category: "engineering", title: "Python后端开发者", desc: "Django/FastAPI/Flask专家，构建高性能Python后端服务", activation: "用Python后端模式开发这个API服务"},
+            {name: "engineering-quality-assurance-engineer", icon: "✅", category: "engineering", title: "QA工程师", desc: "测试策略与自动化专家，设计测试用例、构建测试框架、保证软件质量", activation: "用QA工程师模式制定这个项目的测试策略"},
+            {name: "engineering-security-engineer", icon: "🔒", category: "engineering", title: "安全工程师", desc: "应用安全专家，进行渗透测试、安全审计、漏洞修复和安全架构设计", activation: "用安全工程师模式评估这个系统的安全性"},
+            {name: "engineering-site-reliability-engineer", icon: "📈", category: "engineering", title: "SRE工程师", desc: "系统可靠性专家，构建监控告警、容错机制、灾备方案，确保服务可用性", activation: "设计这个系统的SRE保障方案"},
+            {name: "engineering-smart-contract-developer", icon: "📜", category: "engineering", title: "智能合约开发者", desc: "Solidity/Web3开发专家，编写安全高效的以太坊智能合约", activation: "用智能合约开发者模式编写这个合约"},
+            {name: "engineering-systems-programmer", icon: "⚙️", category: "engineering", title: "系统程序员", desc: "C/C++/Rust底层系统开发专家，操作系统、编译器、网络协议栈", activation: "用系统程序员模式优化这段底层代码"},
+            {name: "engineering-technical-writer", icon: "📝", category: "engineering", title: "技术文档工程师", desc: "API文档、开发者文档、技术规范撰写专家，让复杂技术一目了然", activation: "帮我写这份API的技术文档"},
+            {name: "game-design-narrative-designer", icon: "🎮", category: "game", title: "游戏叙事设计师", desc: "游戏故事与世界观构建专家，设计角色、剧情、对白和叙事机制", activation: "帮我设计这个游戏的世界观和剧情"},
+            {name: "game-design-progression-designer", icon: "📊", category: "game", title: "游戏进度设计师", desc: "玩家进度系统设计专家，设计关卡、奖励、难度曲线和长期留存机制", activation: "设计这个手游的成长体系和进度曲线"},
+            {name: "game-design-systems-designer", icon: "🔧", category: "game", title: "游戏系统设计师", desc: "游戏机制与系统设计专家，设计经济系统、战斗系统、社交系统", activation: "用系统设计师思维设计这个游戏核心玩法"},
+            {name: "game-development-unity-architect", icon: "🎯", category: "game", title: "Unity架构师", desc: "Unity引擎高级架构师，精通C#、ECS架构、性能优化和跨平台部署", activation: "用Unity架构师模式优化这个游戏项目"},
+            {name: "game-development-unreal-architect", icon: "🎯", category: "game", title: "Unreal系统工程师", desc: "Unreal Engine深度技术专家，精通Blueprint、C++、GAS和网络同步", activation: "用Unreal工程师模式开发这个游戏系统"},
+            {name: "game-monetization-specialist", icon: "💎", category: "game", title: "游戏变现专家", desc: "内购、广告、订阅等变现策略设计专家，优化游戏商业化模型", activation: "设计这个游戏的变现方案和付费点"},
+            {name: "game-qa-lead", icon: "🎯", category: "game", title: "游戏QA负责人", desc: "游戏质量保证专家，设计测试用例、自动化测试框架和发布标准", activation: "制定这个游戏的完整测试方案"},
+            {name: "game-user-acquisition-specialist", icon: "📢", category: "game", title: "游戏用户获取专家", desc: "游戏推广与买量策略专家，精通各平台广告投放和ASO优化", activation: "制定这个新游的用户获取策略"},
+            {name: "hr-performance-management-expert", icon: "📊", category: "hr", title: "绩效管理专家", desc: "OKR/KPI体系设计与实施专家，构建科学公正的绩效评估机制", activation: "帮我设计一套绩效管理体系"},
+            {name: "hr-recruitment-specialist", icon: "👥", category: "hr", title: "招聘专家", desc: "人才招聘与甄选专家，设计面试流程、评估标准和招聘策略", activation: "帮我优化这个岗位的招聘流程"},
+            {name: "legal-contract-review-expert", icon: "⚖️", category: "legal", title: "合同审查专家", desc: "商务合同法律审查专家，识别条款风险、提出修改建议", activation: "帮我审查这份合同的潜在风险"},
+            {name: "legal-policy-document-writer", icon: "📄", category: "legal", title: "制度文件撰写专家", desc: "企业内部规章制度编写专家，确保合规性、可执行性和可读性", activation: "帮我起草这份管理制度"},
+            {name: "marketing-b2b-content-strategist", icon: "📣", category: "marketing", title: "B2B内容营销策略师", desc: "B2B领域内容营销专家，打造白皮书、案例研究、行业报告等高价值内容", activation: "制定这个B2B产品的内容营销策略"},
+            {name: "marketing-brand-strategist", icon: "🏷️", category: "marketing", title: "品牌战略师", desc: "品牌定位与战略规划专家，构建差异化品牌形象和品牌资产", activation: "帮我制定这个新品牌的战略定位"},
+            {name: "marketing-community-manager", icon: "👥", category: "marketing", title: "社群运营专家", desc: "私域社群搭建与运营专家，提升用户活跃度和忠诚度", activation: "设计这个产品的社群运营方案"},
+            {name: "marketing-content-marketing-specialist", icon: "✍️", category: "marketing", title: "内容营销专家", desc: "多渠道内容策划与创作专家，打造有影响力的内容矩阵", activation: "制定这个品牌的内容营销计划"},
+            {name: "marketing-douyin-operation-strategist", icon: "🎵", category: "marketing", title: "抖音运营策略师", desc: "抖音内容运营与增长专家，精通短视频创作、算法运营和直播带货", activation: "制定这个账号的抖音运营策略"},
+            {name: "marketing-email-marketing-specialist", icon: "📧", category: "marketing", title: "邮件营销专家", desc: "EDM营销策略与自动化专家，提升邮件打开率、点击率和转化率", activation: "优化这个产品的邮件营销策略"},
+            {name: "marketing-influencer-marketing-specialist", icon: "🌟", category: "marketing", title: "红人营销专家", desc: "KOL/KOC合作策略专家，制定达人投放计划并评估ROI", activation: "制定这个品牌的红人营销方案"},
+            {name: "marketing-podcast-content-strategist", icon: "🎙️", category: "marketing", title: "播客内容策略师", desc: "音频内容策划与播客运营专家，打造有影响力的声音品牌", activation: "策划一档这个主题的播客节目"},
+            {name: "marketing-seo-specialist", icon: "🔍", category: "marketing", title: "SEO专家", desc: "搜索引擎优化专家，提升网站排名和有机流量", activation: "优化这个网站的SEO策略"},
+            {name: "marketing-social-media-strategist", icon: "📱", category: "marketing", title: "社交媒体策略师", desc: "全平台社交媒体运营专家，制定平台适配的内容策略", activation: "制定这个品牌的社交媒体矩阵策略"},
+            {name: "marketing-wechat-official-account-operations", icon: "💬", category: "marketing", title: "微信公众号运营专家", desc: "公众号内容创作与用户运营专家，提升粉丝增长和内容传播", activation: "制定这个公众号的运营策略"},
+            {name: "marketing-wechat-video-account-operations", icon: "📹", category: "marketing", title: "微信视频号运营策略师", desc: "视频号内容运营与变现专家，精通短视频、直播和私域联动", activation: "制定视频号的运营和变现策略"},
+            {name: "marketing-xiaohongshu-operations", icon: "📕", category: "marketing", title: "小红书运营专家", desc: "小红书内容种草与品牌推广专家，精通笔记创作、KOL合作和话题营销", activation: "制定这个小红书账号的运营策略"},
+            {name: "paid-media-ppc-strategist", icon: "💰", category: "marketing", title: "PPC竞价策略师", desc: "Google Ads、Facebook Ads等平台付费广告投放专家，优化广告ROI", activation: "制定这个产品的付费广告投放策略"},
+            {name: "paid-media-roas-optimization-expert", icon: "📈", category: "marketing", title: "ROAS优化专家", desc: "广告投资回报率优化专家，通过数据驱动提升广告效果", activation: "帮我优化这个广告账户的ROAS"},
+            {name: "product-mvp-roadmap-planner", icon: "🗺️", category: "product", title: "MVP路线图规划师", desc: "最小可行产品规划专家，确定核心功能优先级和迭代路径", activation: "帮我规划这个创业产品的MVP路线图"},
+            {name: "product-pricing-strategy-expert", icon: "💵", category: "product", title: "定价策略专家", desc: "产品定价策略设计专家，运用价值定价、心理定价等策略最大化收益", activation: "帮我设计这个SaaS产品的定价策略"},
+            {name: "product-product-manager", icon: "📋", category: "product", title: "产品经理", desc: "产品全生命周期管理专家，从需求分析到产品迭代", activation: "用产品经理思维帮我分析这个需求"},
+            {name: "product-trend-researcher", icon: "🔮", category: "product", title: "趋势研究员", desc: "行业趋势分析与预测专家，发现市场机会和创新方向", activation: "分析这个行业的最新发展趋势"},
+            {name: "project-management-experiment-tracker", icon: "🧪", category: "product", title: "实验追踪员", desc: "A/B测试和实验管理专家，建立数据驱动的实验文化", activation: "帮我设计这个功能的A/B测试方案"},
+            {name: "sales-account-executive", icon: "🤝", category: "specialized", title: "客户拓展策略师", desc: "B2B销售流程优化专家，提升商机转化率和客户满意度", activation: "优化这个大客户的跟进策略"},
+            {name: "sales-sales-coach", icon: "🎯", category: "specialized", title: "销售教练", desc: "销售技能培训与辅导专家，提升团队销售能力和业绩", activation: "帮我培训这个新销售的专业技能"},
+            {name: "spatial-computing-developer", icon: "🥽", category: "spatial", title: "空间计算开发者", desc: "AR/VR/XR应用开发专家，构建沉浸式空间体验", activation: "用空间计算开发者模式设计这个XR应用"},
+            {name: "spatial-visionos-spatial-engineer", icon: "🍎", category: "spatial", title: "visionOS空间工程师", desc: "原生visionOS开发专家，精通SwiftUI体积式界面和Liquid Glass设计", activation: "用visionOS工程师模式开发这个空间应用"},
+            {name: "spatial-xr-cockpit-interaction-specialist", icon: "🚀", category: "spatial", title: "XR座舱交互专家", desc: "沉浸式座舱环境设计专家，打造带空间控件的交互系统", activation: "设计这个XR座舱的交互方案"},
+            {name: "spatial-xr-immersive-developer", icon: "🌐", category: "spatial", title: "XR沉浸式开发者", desc: "WebXR开发专家，用Web技术构建跨平台AR/VR应用", activation: "用WebXR技术开发这个沉浸式应用"},
+            {name: "spatial-xr-interface-architect", icon: "🏗️", category: "spatial", title: "XR界面架构师", desc: "空间交互设计师，专注于减少晕动症、增强临场感的界面策略", activation: "设计这个XR应用的空间界面"},
+            {name: "specialized-ai-prompt-engineer", icon: "💡", category: "specialized", title: "提示词工程师", desc: "AI提示词设计与优化专家，解锁大语言模型的全部潜力", activation: "帮我优化这个AI助手的提示词"},
+            {name: "specialized-conversion-copywriter", icon: "✍️", category: "specialized", title: "转化率文案专家", desc: "高转化率文案撰写专家，用心理学原理提升文案说服力", activation: "用文案专家模式撰写这个落地页文案"},
+            {name: "supply-chain-inventory-forecasting-expert", icon: "📦", category: "specialized", title: "库存预测专家", desc: "需求预测与库存优化专家，降低库存成本同时保证供应", activation: "优化这个仓库的库存管理策略"},
+            {name: "supply-chain-logistics-route-optimizer", icon: "🚚", category: "specialized", title: "物流路线优化师", desc: "物流路径规划专家，运用算法优化配送效率和成本", activation: "优化这个物流网络的配送路线"},
+            {name: "supply-chain-supplier-evaluation-expert", icon: "🏭", category: "specialized", title: "供应商评估专家", desc: "供应商评估与选择专家，建立科学的供应商评价体系", activation: "帮我评估这几个备选供应商"},
+            {name: "support-customer-insights-analyst", icon: "📊", category: "specialized", title: "客服数据分析员", desc: "客服数据深度分析专家，从工单中发现产品改进机会", activation: "分析这些客服工单找出产品问题"},
+            {name: "support-customer-response-specialist", icon: "💬", category: "specialized", title: "客服响应专员", desc: "专业客服话术与响应模板专家，提升客户满意度和解决率", activation: "帮我优化这个场景的客服回复话术"},
+            {name: "testing-api-testing-engineer", icon: "🔌", category: "specialized", title: "API测试工程师", desc: "REST/GraphQL API测试专家，设计全面的API测试策略", activation: "用API测试工程师模式测试这个接口"},
+            {name: "testing-end-to-end-testing-engineer", icon: "🔄", category: "specialized", title: "端到端测试工程师", desc: "E2E测试框架搭建与维护专家，确保关键用户路径畅通", activation: "设计这个功能的关键路径E2E测试"},
+            {name: "testing-performance-benchmarking-engineer", icon: "⚡", category: "specialized", title: "性能基准测试工程师", desc: "性能测试与基准建立专家，确保系统满足性能要求", activation: "进行这个系统的性能基准测试"},
+            {name: "zk-steward", icon: "📚", category: "specialized", title: "ZK卡片盒管家", desc: "Niklas Luhmann卡片盒笔记法专家，建立连接性强、可验证的知识管理系统", activation: "用卡片盒方法帮我整理这个领域的知识"}
+        ];
+
+        let currentCategory = 'all';
+        let searchTerm = '';
+
+        function renderSkills() {
+            const grid = document.getElementById('grid');
+            const empty = document.getElementById('empty');
+            
+            const filtered = skills.filter(skill => {
+                const matchCategory = currentCategory === 'all' || skill.category === currentCategory;
+                const matchSearch = !searchTerm || 
+                    skill.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    skill.desc.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    skill.name.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchCategory && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            grid.innerHTML = filtered.map(skill => `
+                <div class="card" onclick="showModal('${skill.name}')">
+                    <div class="card-header">
+                        <div class="card-icon">${skill.icon}</div>
+                        <div>
+                            <div class="card-title">${skill.title}</div>
+                            <div class="card-name">${skill.name}</div>
+                        </div>
+                    </div>
+                    <div class="card-desc">${skill.desc}</div>
+                    <div class="card-footer">
+                        <div class="activation">激活：<code>${skill.activation.substring(0, 30)}...</code></div>
+                        <button class="copy-btn" onclick="event.stopPropagation(); copyActivation('${skill.activation.replace(/'/g, "\\'")}')">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                            </svg>
+                            复制
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showModal(name) {
+            const skill = skills.find(s => s.name === name);
+            if (!skill) return;
+
+            document.getElementById('modal-icon').textContent = skill.icon;
+            document.getElementById('modal-title').textContent = skill.title;
+            document.getElementById('modal-name').textContent = skill.name;
+            document.getElementById('modal-body').innerHTML = `
+                <h3>技能描述</h3>
+                <p>${skill.desc}</p>
+                
+                <h3>激活方法</h3>
+                <pre><code>${skill.activation}</code></pre>
+                <button class="copy-btn" onclick="copyActivation('${skill.activation.replace(/'/g, "\\'")}')" style="margin-top:12px;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                    </svg>
+                    复制激活指令
+                </button>
+
+                <h3>英文标识</h3>
+                <p>${skill.name}</p>
+
+                <h3>所属分类</h3>
+                <p>${getCategoryName(skill.category)}</p>
+            `;
+            document.getElementById('modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function getCategoryName(cat) {
+            const map = {
+                engineering: '工程开发',
+                design: '设计创意',
+                marketing: '市场营销',
+                product: '产品管理',
+                academic: '学术研究',
+                game: '游戏开发',
+                finance: '金融财务',
+                hr: '人力资源',
+                legal: '法务合规',
+                spatial: '空间计算',
+                specialized: '专项专家'
+            };
+            return map[cat] || cat;
+        }
+
+        function copyActivation(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2000);
+            });
+        }
+
+        // Event Listeners
+        document.getElementById('search').addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            renderSkills();
+        });
+
+        document.getElementById('tabs').addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab')) {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                renderSkills();
+            }
+        });
+
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initial render
+        renderSkills();
+    </script>
+</body>
+</html>
