@@ -6,7 +6,7 @@
 # 其他工具需要 integrations/ 目录（会自动运行 scripts/convert.sh 生成）
 #
 # 用法：
-#   ./scripts/install.sh [--tool <name>] [--no-interactive] [--help]
+#   ./scripts/install.sh [--tool <name>] [--uninstall] [--no-interactive] [--help]
 #
 # 支持的工具：
 #   claude-code  -- 从 skills/ 读取，复制到 ~/.claude/agents/
@@ -56,6 +56,8 @@ dim()    { printf "${C_DIM}%s${C_RESET}\n" "$*"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 INTEGRATIONS="$REPO_ROOT/integrations"
+INSTALL_DIR="${HOME}/.agent_skill"  # 全局安装目录
+INSTALLED_TOOLS_FILE="$INSTALL_DIR/installed_tools.txt"  # 已安装工具列表
 
 ALL_TOOLS=(claude-code copilot antigravity gemini-cli opencode openclaw cursor trae aider windsurf qwen codex deerflow workbuddy hermes kiro)
 
@@ -76,22 +78,23 @@ check_integrations() {
 }
 
 # --- 工具检测 ---
-detect_claude_code() { [[ -d "${HOME}/.claude" ]]; }
-detect_copilot()      { command -v code >/dev/null 2>&1 || [[ -d "${HOME}/.github" ]] || [[ -d "${HOME}/.copilot" ]]; }
-detect_antigravity()  { [[ -d "${HOME}/.gemini/antigravity/skills" ]]; }
-detect_gemini_cli()   { command -v gemini >/dev/null 2>&1 || [[ -d "${HOME}/.gemini" ]]; }
-detect_cursor()       { command -v cursor >/dev/null 2>&1 || [[ -d "${HOME}/.cursor" ]]; }
-detect_trae()         { command -v trae >/dev/null 2>&1 || [[ -d "${HOME}/.trae" ]]; }
-detect_opencode()     { command -v opencode >/dev/null 2>&1 || [[ -d "${HOME}/.config/opencode" ]]; }
-detect_aider()        { command -v aider >/dev/null 2>&1; }
-detect_openclaw()     { command -v openclaw >/dev/null 2>&1 || [[ -d "${HOME}/.openclaw" ]]; }
-detect_windsurf()     { command -v windsurf >/dev/null 2>&1 || [[ -d "${HOME}/.codeium" ]]; }
-detect_qwen()         { command -v qwen >/dev/null 2>&1 || [[ -d "${HOME}/.qwen" ]]; }
-detect_codex()        { command -v codex >/dev/null 2>&1 || [[ -d "${HOME}/.codex" ]]; }
-detect_deerflow()     { command -v deerflow >/dev/null 2>&1 || [[ -d "${HOME}/.deerflow" ]] || docker ps --format '{{.Names}}' 2>/dev/null | grep -q deerflow; }
-detect_workbuddy()    { command -v workbuddy >/dev/null 2>&1 || [[ -d "${HOME}/.workbuddy" ]]; }
-detect_hermes()       { command -v hermes >/dev/null 2>&1 || [[ -d "${HOME}/.hermes" ]]; }
-detect_kiro()         { command -v kiro >/dev/null 2>&1 || command -v kiro-cli >/dev/null 2>&1 || [[ -d "${HOME}/.kiro" ]]; }
+# 检测函数现在检查实际安装的智能体/文件是否存在，而不只是检查工具目录
+detect_claude_code() { [[ -d "${HOME}/.claude/agents" ]] && [[ -n "$(find "${HOME}/.claude/agents" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]]; }
+detect_copilot()      { [[ -d "${HOME}/.github/agents" ]] && [[ -n "$(find "${HOME}/.github/agents" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]] || [[ -d "${HOME}/.copilot/agents" ]] && [[ -n "$(find "${HOME}/.copilot/agents" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]]; }
+detect_antigravity()  { [[ -d "${HOME}/.gemini/antigravity/skills" ]] && [[ -n "$(find "${HOME}/.gemini/antigravity/skills" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_gemini_cli()   { [[ -d "${HOME}/.gemini/extensions/agency-agents/skills" ]] && [[ -n "$(find "${HOME}/.gemini/extensions/agency-agents/skills" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_cursor()       { [[ -d "${PWD}/.cursor/rules" ]] && [[ -n "$(find "${PWD}/.cursor/rules" -maxdepth 1 -name "*.mdc" -print -quit 2>/dev/null)" ]]; }
+detect_trae()         { [[ -d "${PWD}/.trae/rules" ]] && [[ -n "$(find "${PWD}/.trae/rules" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]]; }
+detect_opencode()     { [[ -d "${PWD}/.opencode/agents" ]] && [[ -n "$(find "${PWD}/.opencode/agents" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]]; }
+detect_aider()        { [[ -f "${PWD}/CONVENTIONS.md" ]]; }
+detect_openclaw()     { [[ -d "${HOME}/.openclaw/agency-agents" ]] && [[ -n "$(find "${HOME}/.openclaw/agency-agents" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_windsurf()     { [[ -f "${PWD}/.windsurfrules" ]]; }
+detect_qwen()         { [[ -d "${PWD}/.qwen/agents" ]] && [[ -n "$(find "${PWD}/.qwen/agents" -maxdepth 1 -name "*.md" -print -quit 2>/dev/null)" ]]; }
+detect_codex()        { [[ -d "${PWD}/.codex/agents" ]] && [[ -n "$(find "${PWD}/.codex/agents" -maxdepth 1 -name "*.toml" -print -quit 2>/dev/null)" ]]; }
+detect_deerflow()     { [[ -d "${DEERFLOW_SKILLS_DIR:-./skills/custom}" ]] && [[ -n "$(find "${DEERFLOW_SKILLS_DIR:-./skills/custom}" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_workbuddy()    { [[ -d "${HOME}/.workbuddy/skills" ]] && [[ -n "$(find "${HOME}/.workbuddy/skills" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_hermes()       { [[ -d "${HOME}/.hermes/skills" ]] && [[ -n "$(find "${HOME}/.hermes/skills" -mindepth 1 -maxdepth 1 -type d -print -quit 2>/dev/null)" ]]; }
+detect_kiro()         { [[ -d "${HOME}/.kiro/agents" ]] && [[ -n "$(find "${HOME}/.kiro/agents" -name "*.json" -print -quit 2>/dev/null)" ]]; }
 
 is_detected() {
   case "$1" in
@@ -224,9 +227,9 @@ install_gemini_cli() {
   local src="$INTEGRATIONS/gemini-cli"
   local dest="${HOME}/.gemini/extensions/agency-agents"
   local count=0
-  [[ -d "$src" ]] || { err "integrations/gemini-cli 不存在。请先运行 convert.sh --tool gemini-cli"; return 1; }
-  [[ -f "$src/gemini-extension.json" ]] || { err "gemini-extension.json 缺失。请先运行 convert.sh --tool gemini-cli"; return 1; }
-  [[ -d "$src/skills" ]] || { err "skills/ 目录缺失。请先运行 convert.sh --tool gemini-cli"; return 1; }
+  [[ -d "$src" ]] || { warn "gemini-cli: integrations/gemini-cli 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool gemini-cli 生成"; return 0; }
+  [[ -f "$src/gemini-extension.json" ]] || { warn "gemini-cli: gemini-extension.json 缺失，跳过"; return 0; }
+  [[ -d "$src/skills" ]] || { warn "gemini-cli: skills/ 目录缺失，跳过"; return 0; }
   mkdir -p "$dest/skills"
   cp "$src/gemini-extension.json" "$dest/gemini-extension.json"
   local d
@@ -243,7 +246,7 @@ install_opencode() {
   local src="$INTEGRATIONS/opencode/agents"
   local dest="${PWD}/.opencode/agents"
   local count=0
-  [[ -d "$src" ]] || { err "integrations/opencode 不存在。请先运行 convert.sh"; return 1; }
+  [[ -d "$src" ]] || { warn "opencode: integrations/opencode 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool opencode 生成"; return 0; }
   mkdir -p "$dest"
   local f
   while IFS= read -r -d '' f; do
@@ -304,7 +307,7 @@ install_cursor() {
   local src="$INTEGRATIONS/cursor/rules"
   local dest="${PWD}/.cursor/rules"
   local count=0
-  [[ -d "$src" ]] || { err "integrations/cursor 不存在。请先运行 convert.sh"; return 1; }
+  [[ -d "$src" ]] || { warn "cursor: integrations/cursor 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool cursor 生成"; return 0; }
   mkdir -p "$dest"
   local f
   while IFS= read -r -d '' f; do
@@ -318,7 +321,7 @@ install_trae() {
   local src="$INTEGRATIONS/trae/rules"
   local dest="${PWD}/.trae/rules"
   local count=0
-  [[ -d "$src" ]] || { err "integrations/trae 不存在。请先运行 convert.sh --tool trae"; return 1; }
+  [[ -d "$src" ]] || { warn "trae: integrations/trae 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool trae 生成"; return 0; }
   mkdir -p "$dest"
   local f
   while IFS= read -r -d '' f; do
@@ -331,7 +334,7 @@ install_trae() {
 install_aider() {
   local src="$INTEGRATIONS/aider/CONVENTIONS.md"
   local dest="${PWD}/CONVENTIONS.md"
-  [[ -f "$src" ]] || { err "integrations/aider/CONVENTIONS.md 不存在。请先运行 convert.sh"; return 1; }
+  [[ -f "$src" ]] || { warn "aider: integrations/aider/CONVENTIONS.md 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool aider 生成"; return 0; }
   if [[ -f "$dest" ]]; then
     warn "Aider: CONVENTIONS.md 已存在 ($dest)，删除后重试。"
     return 0
@@ -344,7 +347,7 @@ install_aider() {
 install_windsurf() {
   local src="$INTEGRATIONS/windsurf/.windsurfrules"
   local dest="${PWD}/.windsurfrules"
-  [[ -f "$src" ]] || { err "integrations/windsurf/.windsurfrules 不存在。请先运行 convert.sh"; return 1; }
+  [[ -f "$src" ]] || { warn "windsurf: integrations/windsurf/.windsurfrules 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool windsurf 生成"; return 0; }
   if [[ -f "$dest" ]]; then
     warn "Windsurf: .windsurfrules 已存在 ($dest)，删除后重试。"
     return 0
@@ -359,7 +362,7 @@ install_qwen() {
   local dest="${PWD}/.qwen/agents"
   local count=0
 
-  [[ -d "$src" ]] || { err "integrations/qwen 不存在。请先运行 convert.sh"; return 1; }
+  [[ -d "$src" ]] || { warn "qwen: integrations/qwen 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool qwen 生成"; return 0; }
 
   mkdir -p "$dest"
 
@@ -379,7 +382,7 @@ install_codex() {
   local dest="${PWD}/.codex/agents"
   local count=0
 
-  [[ -d "$src" ]] || { err "integrations/codex 不存在。请先运行 convert.sh --tool codex"; return 1; }
+  [[ -d "$src" ]] || { warn "codex: integrations/codex 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool codex 生成"; return 0; }
 
   mkdir -p "$dest"
 
@@ -398,7 +401,7 @@ install_deerflow() {
   local dest="${DEERFLOW_SKILLS_DIR:-./skills/custom}"
   local count=0
 
-  [[ -d "$src" ]] || { err "integrations/deerflow 不存在。请先运行 convert.sh --tool deerflow"; return 1; }
+  [[ -d "$src" ]] || { warn "deerflow: integrations/deerflow 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool deerflow 生成"; return 0; }
 
   mkdir -p "$dest"
 
@@ -528,7 +531,7 @@ install_kiro() {
   local dest="${HOME}/.kiro/agents"
   local count=0
 
-  [[ -d "$src" ]] || { err "integrations/kiro 不存在。请先运行 convert.sh --tool kiro"; return 1; }
+  [[ -d "$src" ]] || { warn "kiro: integrations/kiro 不存在，跳过"; warn "提示: 运行 ./scripts/convert.sh --tool kiro 生成"; return 0; }
 
   mkdir -p "$dest/prompts"
 
@@ -548,6 +551,43 @@ install_kiro() {
 
   ok "Kiro: $count 个智能体 -> $dest"
   warn "提示: 在 Kiro 中使用 '/agent swap' 切换智能体"
+}
+
+# --- 安装 HTML 指南页面 ---
+install_html() {
+  local src="$REPO_ROOT/html/index.html"
+  local dest="$INSTALL_DIR/index.html"
+
+  if [[ -f "$src" ]]; then
+    mkdir -p "$INSTALL_DIR"
+    cp "$src" "$dest"
+    return 0
+  else
+    return 1
+  fi
+}
+
+# --- 保存已安装的工具列表 ---
+save_installed_tools() {
+  mkdir -p "$INSTALL_DIR"
+  printf "%s\n" "${SELECTED_TOOLS[@]}" > "$INSTALLED_TOOLS_FILE"
+  dim "  已记录安装的工具列表。"
+}
+
+# --- 打开本地安装的 HTML 指南 ---
+open_installed_html() {
+  local index_file="$INSTALL_DIR/index.html"
+
+  if [[ -f "$index_file" ]]; then
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+      open "$index_file"
+    elif [[ "$(uname -s)" == "Linux" ]]; then
+      xdg-open "$index_file" 2>/dev/null || gnome-open "$index_file" 2>/dev/null || true
+    fi
+    return 0
+  else
+    return 1
+  fi
 }
 
 install_tool() {
@@ -571,15 +611,359 @@ install_tool() {
   esac
 }
 
+# --- 卸载函数 ---
+
+uninstall_claude_code() {
+  local dest="${HOME}/.claude/agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.md" -print0)
+    # 删除空目录
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Claude Code: 已卸载 $count 个智能体"
+}
+
+uninstall_copilot() {
+  local dest1="${HOME}/.github/agents"
+  local dest2="${HOME}/.copilot/agents"
+  local count=0
+  if [[ -d "$dest1" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest1" -maxdepth 1 -name "*.md" -print0)
+    rmdir "$dest1" 2>/dev/null || true
+  fi
+  if [[ -d "$dest2" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest2" -maxdepth 1 -name "*.md" -print0)
+    rmdir "$dest2" 2>/dev/null || true
+  fi
+  ok "Copilot: 已卸载 $count 个智能体"
+}
+
+uninstall_antigravity() {
+  local dest="${HOME}/.gemini/antigravity/skills"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local d
+    while IFS= read -r -d '' d; do
+      rm -rf "$d"; (( count++ )) || true
+    done < <(find "$dest" -mindepth 1 -maxdepth 1 -type d -print0)
+    # 删除 skills 目录（保留 antigravity 目录结构）
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Antigravity: 已卸载 $count 个 skills"
+}
+
+uninstall_gemini_cli() {
+  local dest="${HOME}/.gemini/extensions/agency-agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -name "*.md" -o -name "*.json" -print0)
+    rm -rf "$dest/skills" 2>/dev/null || true
+    rm -rf "$dest"
+  fi
+  ok "Gemini CLI: 已卸载"
+}
+
+uninstall_opencode() {
+  local dest="${PWD}/.opencode/agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.md" -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "OpenCode: 已卸载 $count 个智能体"
+}
+
+uninstall_openclaw() {
+  local dest="${HOME}/.openclaw/agency-agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    if command -v openclaw >/dev/null 2>&1; then
+      local d
+      for d in "$dest"/*/; do
+        [[ -d "$d" ]] || continue
+        local name; name="$(basename "$d")"
+        openclaw agents remove "$name" 2>/dev/null || true
+        rm -rf "$d"; (( count++ )) || true
+      done
+    else
+      rm -rf "$dest"; count=$(find "$dest" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    fi
+  fi
+  ok "OpenClaw: 已卸载 $count 个工作空间"
+}
+
+uninstall_cursor() {
+  local dest="${PWD}/.cursor/rules"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.mdc" -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Cursor: 已卸载 $count 个规则"
+}
+
+uninstall_trae() {
+  local dest="${PWD}/.trae/rules"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.md" -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Trae: 已卸载 $count 个规则"
+}
+
+uninstall_aider() {
+  local dest="${PWD}/CONVENTIONS.md"
+  if [[ -f "$dest" ]]; then
+    rm -f "$dest"
+    ok "Aider: 已卸载 CONVENTIONS.md"
+  else
+    warn "Aider: 未找到 CONVENTIONS.md"
+  fi
+}
+
+uninstall_windsurf() {
+  local dest="${PWD}/.windsurfrules"
+  if [[ -f "$dest" ]]; then
+    rm -f "$dest"
+    ok "Windsurf: 已卸载 .windsurfrules"
+  else
+    warn "Windsurf: 未找到 .windsurfrules"
+  fi
+}
+
+uninstall_qwen() {
+  local dest="${PWD}/.qwen/agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.md" -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Qwen Code: 已卸载 $count 个智能体"
+}
+
+uninstall_codex() {
+  local dest="${PWD}/.codex/agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -maxdepth 1 -name "*.toml" -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Codex CLI: 已卸载 $count 个智能体"
+}
+
+uninstall_deerflow() {
+  local dest="${DEERFLOW_SKILLS_DIR:-./skills/custom}"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local d
+    while IFS= read -r -d '' d; do
+      rm -rf "$d"; (( count++ )) || true
+    done < <(find "$dest" -mindepth 1 -maxdepth 1 -type d -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "DeerFlow: 已卸载 $count 个 skills"
+}
+
+uninstall_workbuddy() {
+  local dest="${HOME}/.workbuddy/skills"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local d
+    while IFS= read -r -d '' d; do
+      rm -rf "$d"; (( count++ )) || true
+    done < <(find "$dest" -mindepth 1 -maxdepth 1 -type d -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "WorkBuddy: 已卸载 $count 个 skills"
+}
+
+uninstall_hermes() {
+  local dest="${HOME}/.hermes/skills"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local d
+    while IFS= read -r -d '' d; do
+      rm -rf "$d"; (( count++ )) || true
+    done < <(find "$dest" -mindepth 1 -type d -print0)
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Hermes Agent: 已卸载 $count 个 skills"
+}
+
+uninstall_kiro() {
+  local dest="${HOME}/.kiro/agents"
+  local count=0
+  if [[ -d "$dest" ]]; then
+    local f
+    while IFS= read -r -d '' f; do
+      rm -f "$f"; (( count++ )) || true
+    done < <(find "$dest" -name "*.json" -o -name "*.md" -print0)
+    rm -rf "$dest/prompts" 2>/dev/null || true
+    rmdir "$dest" 2>/dev/null || true
+  fi
+  ok "Kiro: 已卸载 $count 个文件"
+}
+
+uninstall_tool() {
+  case "$1" in
+    claude-code) uninstall_claude_code ;;
+    copilot)     uninstall_copilot     ;;
+    antigravity) uninstall_antigravity ;;
+    gemini-cli)  uninstall_gemini_cli  ;;
+    opencode)    uninstall_opencode    ;;
+    openclaw)    uninstall_openclaw    ;;
+    cursor)      uninstall_cursor      ;;
+    trae)        uninstall_trae        ;;
+    aider)       uninstall_aider       ;;
+    windsurf)    uninstall_windsurf    ;;
+    qwen)        uninstall_qwen        ;;
+    codex)       uninstall_codex       ;;
+    deerflow)    uninstall_deerflow    ;;
+    workbuddy)   uninstall_workbuddy   ;;
+    hermes)      uninstall_hermes      ;;
+    kiro)        uninstall_kiro        ;;
+  esac
+}
+
+# --- 交互式模式选择 ---
+interactive_mode_select() {
+  header "AI 智能体专家团队 -- 安装脚本"
+  printf "\n"
+  printf "  ${C_CYAN}1)${C_RESET}  安装智能体到工具\n"
+  printf "  ${C_CYAN}2)${C_RESET}  卸载已安装的智能体\n"
+  printf "  ${C_CYAN}Q)${C_RESET}  退出\n"
+  printf "\n"
+  printf "请输入选项 (1, 2, Q): "
+  read -r mode_choice
+
+  case "$mode_choice" in
+    1) SELECTED_MODE="install" ;;
+    2) SELECTED_MODE="uninstall" ;;
+    Q|q) printf "\n"; ok "已取消。"; exit 0 ;;
+    *) printf "\n"; err "无效选项: $mode_choice"; exit 1 ;;
+  esac
+}
+
+# --- 交互式工具选择 ---
+interactive_select_tool() {
+  local action_text="安装到"
+  local all_label="安装所有检测到的工具"
+  [[ "$SELECTED_MODE" == "uninstall" ]] && action_text="从卸载" && all_label="卸载所有工具"
+
+  header "请选择要${action_text}的工具："
+  printf "\n"
+
+  local tools_with_status=()
+  local idx=1
+
+  local t
+  for t in "${ALL_TOOLS[@]}"; do
+    local status="${C_DIM}[ ]${C_RESET}"
+    local status_text="未安装"
+    if is_detected "$t" 2>/dev/null; then
+      status="${C_GREEN}[*]${C_RESET}"
+      status_text="已安装"
+    fi
+    printf "  ${C_CYAN}%2d)${C_RESET}  %-14s  %s  %s\n" "$idx" "$(tool_label "$t")" "$status" "$status_text"
+    tools_with_status+=("$t")
+    (( idx++ )) || true
+  done
+
+  printf "\n"
+  printf "  ${C_CYAN}A)${C_RESET}  %s\n" "$all_label"
+  printf "  ${C_CYAN}B)${C_RESET}  返回上级菜单\n"
+  printf "  ${C_CYAN}Q)${C_RESET}  退出\n"
+  printf "\n"
+
+  printf "请输入选项编号 (1-%d, A, B, Q): " ${#ALL_TOOLS[@]}
+  read -r choice
+
+  case "$choice" in
+    Q|q)
+      printf "\n"
+      ok "已取消。"
+      exit 0
+      ;;
+    B|b)
+      # 返回上级菜单（重新选择安装/卸载）
+      printf "\n"
+      interactive_mode_select
+      interactive_select_tool
+      return
+      ;;
+    A|a)
+      SELECTED_TOOLS=()
+      if [[ "$SELECTED_MODE" == "install" ]]; then
+        for t in "${ALL_TOOLS[@]}"; do
+          if is_detected "$t" 2>/dev/null; then
+            SELECTED_TOOLS+=("$t")
+          fi
+        done
+        if [[ ${#SELECTED_TOOLS[@]} -eq 0 ]]; then
+          printf "\n"
+          warn "未检测到任何已安装的工具。"
+          printf "  提示: 使用 --tool <名称> 强制安装指定工具。\n"
+          exit 0
+        fi
+      else
+        # 卸载模式：列出所有工具
+        SELECTED_TOOLS=("${ALL_TOOLS[@]}")
+      fi
+      return
+      ;;
+    *)
+      if [[ "$choice" =~ ^[0-9]+$ ]] && [[ "$choice" -ge 1 ]] && [[ "$choice" -le ${#ALL_TOOLS[@]} ]]; then
+        local selected="${tools_with_status[$((choice - 1))]}"
+        SELECTED_TOOLS=("$selected")
+      else
+        printf "\n"
+        err "无效选项: $choice"
+        exit 1
+      fi
+      ;;
+  esac
+}
+
 # --- 入口 ---
 main() {
   local tool="all"
+  SELECTED_MODE="install"
   HERMES_CATEGORIES=()
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --tool)            tool="${2:?'--tool 需要一个值'}"; shift 2 ;;
       --category)        HERMES_CATEGORIES+=("${2:?'--category 需要一个值'}"); shift 2 ;;
+      --uninstall)       SELECTED_MODE="uninstall" ;;
       --no-interactive)  shift ;;
       --help|-h)         usage ;;
       *)                 err "未知选项: $1"; usage ;;
@@ -607,44 +991,138 @@ main() {
   if [[ "$tool" != "all" ]]; then
     SELECTED_TOOLS=("$tool")
   else
-    header "AI 智能体专家团队 -- 扫描已安装的工具..."
+    # 交互式选择模式（安装/卸载）
+    interactive_mode_select
+    # 交互式选择工具
+    interactive_select_tool
+
+    printf "\n"
+    header "已选择的工具："
     printf "\n"
     local t
-    for t in "${ALL_TOOLS[@]}"; do
-      if is_detected "$t" 2>/dev/null; then
-        SELECTED_TOOLS+=("$t")
-        printf "  ${C_GREEN}[*]${C_RESET}  %s  ${C_DIM}已检测到${C_RESET}\n" "$(tool_label "$t")"
-      else
-        printf "  ${C_DIM}[ ]  %s  未找到${C_RESET}\n" "$(tool_label "$t")"
-      fi
+    for t in "${SELECTED_TOOLS[@]}"; do
+      printf "  ${C_GREEN}[*]${C_RESET}  %s\n" "$(tool_label "$t")"
     done
   fi
 
   if [[ ${#SELECTED_TOOLS[@]} -eq 0 ]]; then
-    warn "未选择或检测到任何工具。"
+    warn "未选择任何工具。"
     printf "\n"
-    dim "  提示: 使用 --tool <名称> 强制安装指定工具。"
-    dim "  可选: ${ALL_TOOLS[*]}"
     exit 0
   fi
 
-  printf "\n"
-  header "AI 智能体专家团队 -- 安装智能体"
-  printf "  仓库:     %s\n" "$REPO_ROOT"
-  printf "  安装到:   %s\n" "${SELECTED_TOOLS[*]}"
-  printf "\n"
+  if [[ "$SELECTED_MODE" == "uninstall" ]]; then
+    printf "\n"
+    header "AI 智能体专家团队 -- 卸载智能体"
+    printf "\n"
 
-  local installed=0 t
-  for t in "${SELECTED_TOOLS[@]}"; do
-    install_tool "$t"
-    (( installed++ )) || true
-  done
+    local count=0 t
+    for t in "${SELECTED_TOOLS[@]}"; do
+      uninstall_tool "$t"
+      (( count++ )) || true
+    done
 
-  printf "\n"
-  ok "完成！已安装 $installed 个工具。"
-  printf "\n"
-  dim "  运行 ./scripts/convert.sh 重新生成集成文件。"
-  printf "\n"
+    printf "\n"
+    ok "完成！已卸载 $count 个工具。"
+    printf "\n"
+
+    # 卸载后重新检测安装状态
+    header "卸载后的安装状态："
+    printf "\n"
+    for t in "${SELECTED_TOOLS[@]}"; do
+      if is_detected "$t" 2>/dev/null; then
+        printf "  ${C_RED}[x]${C_RESET}  %-14s  ${C_RED}未卸载（文件仍存在）${C_RESET}\n" "$(tool_label "$t")"
+      else
+        printf "  ${C_GREEN}[*]${C_RESET}  %-14s  ${C_GREEN}已卸载${C_RESET}\n" "$(tool_label "$t")"
+      fi
+    done
+    printf "\n"
+  else
+    printf "\n"
+    header "AI 智能体专家团队 -- 安装智能体"
+    printf "  仓库:     %s\n" "$REPO_ROOT"
+    printf "  安装到:   %s\n" "${SELECTED_TOOLS[*]}"
+    printf "\n"
+
+    local installed=0 t
+    for t in "${SELECTED_TOOLS[@]}"; do
+      install_tool "$t"
+      (( installed++ )) || true
+    done
+
+    printf "\n"
+    ok "完成！已安装 $installed 个工具。"
+    printf "\n"
+
+    # 询问是否运行 convert.sh 集成工具
+    printf "  ${C_CYAN}是否自动生成集成文件？${C_RESET}\n"
+    printf "  这将运行 ./scripts/convert.sh 为需要 integrations/ 的工具生成配置文件。\n"
+    printf "\n"
+    printf "  ${C_CYAN}1)${C_RESET}  只转换已安装的工具\n"
+    printf "  ${C_CYAN}2)${C_RESET}  转换所有工具\n"
+    printf "  ${C_CYAN}3)${C_RESET}  选择特定工具生成\n"
+    printf "  ${C_CYAN}N)${C_RESET}  暂不生成，稍后手动运行\n"
+    printf "\n"
+    printf "请输入选项 (1, 2, 3, N): "
+    read -r convert_choice
+
+    case "$convert_choice" in
+      1)
+        # 先保存已安装的工具列表
+        save_installed_tools
+        # 只转换已安装的工具
+        printf "\n"
+        header "正在生成已安装工具的集成文件..."
+        printf "\n"
+        if "$SCRIPT_DIR/convert.sh" --installed; then
+          ok "集成文件生成完成！"
+        else
+          warn "集成文件生成过程中出现一些问题。"
+        fi
+        ;;
+      2)
+        # 转换所有工具
+        printf "\n"
+        header "正在生成所有工具的集成文件..."
+        printf "\n"
+        if "$SCRIPT_DIR/convert.sh"; then
+          ok "集成文件生成完成！"
+        else
+          warn "集成文件生成过程中出现一些问题。"
+        fi
+        ;;
+      3)
+        printf "\n"
+        printf "支持的工具: antigravity, gemini-cli, opencode, cursor, trae, aider, windsurf, openclaw, qwen, codex, deerflow, workbuddy, hermes, kiro\n"
+        printf "请输入要生成的工具名称（多个用空格分隔）: "
+        read -r tool_list
+        if [[ -n "$tool_list" ]]; then
+          printf "\n"
+          header "正在生成集成文件..."
+          printf "\n"
+          for tool in $tool_list; do
+            printf "  处理 %s ...\n" "$tool"
+            "$SCRIPT_DIR/convert.sh" --tool "$tool" 2>&1 | sed 's/^/    /'
+          done
+          ok "所选工具的集成文件生成完成！"
+        else
+          dim "  未选择任何工具，跳过生成。"
+        fi
+        ;;
+      N|n|*)
+        dim "  跳过生成，稍后可运行 ./scripts/convert.sh 手动生成。"
+        ;;
+    esac
+    printf "\n"
+
+    # 安装完成后自动打开本地 index.html
+    if install_html; then
+      dim "  已安装安装指南到 $INSTALL_DIR/index.html"
+      if open_installed_html; then
+        dim "  已自动打开安装指南页面。"
+      fi
+    fi
+  fi
 }
 
 main "$@"

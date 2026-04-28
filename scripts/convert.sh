@@ -6,7 +6,7 @@
 # 添加或修改智能体后运行此脚本重新生成集成文件。
 #
 # 用法：
-#   ./scripts/convert.sh [--tool <name>] [--out <dir>] [--help]
+#   ./scripts/convert.sh [--tool <name>] [--installed] [--out <dir>] [--help]
 #
 # 支持的工具：
 #   antigravity  — Antigravity skill 文件 (~/.gemini/antigravity/skills/)
@@ -49,8 +49,27 @@ OUT_DIR="$REPO_ROOT/integrations"
 TODAY="$(date +%Y-%m-%d)"
 
 AGENT_DIRS=(
-  academic design engineering finance game-development hr legal marketing paid-media sales product
-  project-management supply-chain testing support spatial-computing specialized
+  academic-anthropologist academic-geographer academic-historian academic-narratologists academic-psychologist academic-study-planner
+  accounts-payable-agent agentic-identity-trust agents-orchestrator automation-governance-architect
+  blender-addon-engineer blockchain-security-auditor compliance-auditor corporate-training-designer
+  data-consolidation-agent
+  design-brand-guardian design-image-prompt-engineer design-inclusive-visuals-specialist design-ui-designer design-ux-architect design-ux-researcher design-visual-storyteller design-whimsy-injector
+  engineering-ai-data-remediation-engineer engineering-ai-engineer engineering-autonomous-optimization-architect engineering-backend-architect engineering-cms-developer engineering-code-reviewer engineering-codebase-onboarding-engineer engineering-data-engineer engineering-database-optimizer engineering-devops-automator engineering-dingtalk-integration-developer engineering-email-intelligence-engineer engineering-embedded-firmware-engineer engineering-embedded-linux-driver-engineer engineering-feishu-integration-developer engineering-filament-optimization-specialist engineering-fpga-digital-design-engineer engineering-frontend-developer engineering-git-workflow-master engineering-incident-response-commander engineering-iot-solution-architect engineering-minimal-change-engineer engineering-mobile-app-builder engineering-rapid-prototyper engineering-security-engineer engineering-senior-developer engineering-software-architect engineering-solidity-smart-contract-engineer engineering-sre engineering-technical-writer engineering-threat-detection-engineer engineering-voice-ai-integration-engineer engineering-wechat-mini-program-developer
+  finance-bookkeeper-controller finance-financial-analyst finance-financial-forecaster finance-fpa-analyst finance-fraud-detector finance-investment-researcher finance-invoice-manager finance-tax-strategist
+  game-audio-engineer game-designer gaokao-college-advisor godot-gameplay-scripter godot-multiplayer-engineer godot-shader-developer
+  government-digital-presales-consultant guizang-ppt-skill
+  healthcare-customer-service healthcare-marketing-compliance hospitality-guest-services
+  hr-onboarding hr-performance-reviewer hr-recruiter
+  identity-graph-operator
+  language-translator legal-billing-time-tracking legal-client-intake legal-contract-reviewer legal-document-review legal-policy-writer level-designer loan-officer-assistant lsp-index-engineer
+  macos-spatial-metal-engineer marketing-agentic-search-optimizer marketing-ai-citation-strategist marketing-app-store-optimizer marketing-baidu-seo-specialist marketing-bilibili-strategist marketing-book-co-author marketing-carousel-growth-engine marketing-china-ecommerce-operator marketing-china-market-localization-strategist marketing-content-creator marketing-cross-border-ecommerce marketing-douyin-strategist marketing-ecommerce-operator marketing-growth-hacker marketing-instagram-curator marketing-knowledge-commerce-strategist marketing-kuaishou-strategist marketing-linkedin-content-creator marketing-livestream-commerce-coach marketing-podcast-strategist marketing-private-domain-operator marketing-reddit-community-builder marketing-seo-specialist marketing-short-video-editing-coach marketing-social-media-strategist marketing-tiktok-strategist marketing-twitter-engager marketing-video-optimization-specialist marketing-wechat-official-account marketing-wechat-operator marketing-weibo-strategist marketing-weixin-channels-strategist marketing-xiaohongshu-operator marketing-xiaohongshu-specialist marketing-zhihu-strategist
+  narrative-designer
+  paid-media-auditor paid-media-creative-strategist paid-media-paid-social-strategist paid-media-ppc-strategist paid-media-programmatic-buyer paid-media-search-query-analyst paid-media-tracking-specialist
+  product-behavioral-nudge-engine product-feedback-synthesizer product-manager product-sprint-prioritizer product-trend-researcher project-management-experiment-tracker project-management-jira-workflow-steward project-management-project-shepherd project-management-studio-operations project-management-studio-producer project-manager-senior prompt-engineer
+  real-estate-buyer-seller recruitment-specialist report-distribution-agent retail-customer-returns roblox-avatar-creator roblox-experience-designer roblox-systems-scripter
+  sales-account-strategist sales-coach sales-data-extraction-agent sales-deal-strategist sales-discovery-coach sales-engineer sales-outbound-strategist sales-pipeline-analyst sales-proposal-strategist specialized-ai-policy-writer specialized-chief-of-staff specialized-civil-engineer specialized-cultural-intelligence-strategist specialized-developer-advocate specialized-document-generator specialized-french-consulting-market specialized-korean-business-navigator specialized-mcp-builder specialized-meeting-assistant specialized-model-qa specialized-pricing-optimizer specialized-risk-assessor specialized-salesforce-architect specialized-workflow-architect study-abroad-advisor supply-chain-inventory-forecaster supply-chain-route-optimizer supply-chain-vendor-evaluator support-analytics-reporter support-executive-summary-generator support-finance-tracker support-infrastructure-maintainer support-legal-compliance-checker support-recruitment-specialist support-supply-chain-strategist support-support-responder
+  technical-artist technical-translator-agent terminal-integration-specialist testing-accessibility-auditor testing-api-tester testing-embedded-qa-engineer testing-evidence-collector testing-performance-benchmarker testing-reality-checker testing-test-results-analyzer testing-tool-evaluator testing-workflow-optimizer
+  unity-architect
 )
 
 # --- 用法 ---
@@ -75,10 +94,19 @@ get_body() {
   awk 'BEGIN{fm=0} /^---$/{fm++; next} fm>=2{print}' "$1"
 }
 
-# 从文件名生成 slug（适配中文：直接用文件名而非中文 name 字段）
-# "marketing-douyin-strategist.md" → "marketing-douyin-strategist"
+# 从文件路径生成 slug
+# 如果文件是 SKILL.md，使用目录名（skill name）
+# 否则使用文件名
 slugify_from_file() {
-  basename "$1" .md
+  local file="$1"
+  local dir_name
+  dir_name="$(basename "$(dirname "$file")")"
+  # 如果目录名是有效的 skill 名称（包含 -），使用目录名
+  if [[ "$dir_name" == *"-"* ]] || [[ "$dir_name" == "SKILL" ]]; then
+    echo "$dir_name"
+  else
+    basename "$file" .md
+  fi
 }
 
 # --- 颜色映射 ---
@@ -575,37 +603,39 @@ run_conversions() {
   local count=0
 
   for dir in "${AGENT_DIRS[@]}"; do
-    local dirpath="$REPO_ROOT/$dir"
+    local dirpath="$REPO_ROOT/skills/$dir"
     [[ -d "$dirpath" ]] || continue
 
-    while IFS= read -r -d '' file; do
-      local first_line
-      first_line="$(head -1 "$file")"
-      [[ "$first_line" == "---" ]] || continue
+    # 查找 SKILL.md 文件
+    local file="$dirpath/SKILL.md"
+    [[ -f "$file" ]] || continue
 
-      local name
-      name="$(get_field "name" "$file")"
-      [[ -n "$name" ]] || continue
+    local first_line
+    first_line="$(head -1 "$file")"
+    [[ "$first_line" == "---" ]] || continue
 
-      case "$tool" in
-        antigravity) convert_antigravity "$file" ;;
-        gemini-cli)  convert_gemini_cli  "$file" ;;
-        opencode)    convert_opencode    "$file" ;;
-        cursor)      convert_cursor      "$file" ;;
-        trae)        convert_trae        "$file" ;;
-        openclaw)    convert_openclaw    "$file" ;;
-        qwen)        convert_qwen        "$file" ;;
-        codex)       convert_codex       "$file" ;;
-        deerflow)    convert_deerflow    "$file" ;;
-        workbuddy)   convert_workbuddy   "$file" ;;
-        hermes)      convert_hermes      "$file" ;;
-        kiro)        convert_kiro        "$file" ;;
-        aider)       accumulate_aider    "$file" ;;
-        windsurf)    accumulate_windsurf "$file" ;;
-      esac
+    local name
+    name="$(get_field "name" "$file")"
+    [[ -n "$name" ]] || continue
 
-      (( count++ )) || true
-    done < <(find "$dirpath" -name "*.md" -type f -print0 | sort -z)
+    case "$tool" in
+      antigravity) convert_antigravity "$file" ;;
+      gemini-cli)  convert_gemini_cli  "$file" ;;
+      opencode)    convert_opencode    "$file" ;;
+      cursor)      convert_cursor      "$file" ;;
+      trae)        convert_trae        "$file" ;;
+      openclaw)    convert_openclaw    "$file" ;;
+      qwen)        convert_qwen        "$file" ;;
+      codex)       convert_codex       "$file" ;;
+      deerflow)    convert_deerflow    "$file" ;;
+      workbuddy)   convert_workbuddy   "$file" ;;
+      hermes)      convert_hermes      "$file" ;;
+      kiro)        convert_kiro        "$file" ;;
+      aider)       accumulate_aider    "$file" ;;
+      windsurf)    accumulate_windsurf "$file" ;;
+    esac
+
+    (( count++ )) || true
   done
 
   echo "$count"
@@ -616,11 +646,14 @@ run_conversions() {
 
 main() {
   local tool="all"
+  local use_installed=false
+  local INSTALLED_TOOLS_FILE="${HOME}/.agent_skill/installed_tools.txt"
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --tool) tool="${2:?'--tool 需要一个值'}"; shift 2 ;;
       --out)  OUT_DIR="${2:?'--out 需要一个值'}"; shift 2 ;;
+      --installed) use_installed=true; shift ;;
       --help|-h) usage ;;
       *) error "未知选项: $1"; usage ;;
     esac
@@ -641,7 +674,24 @@ main() {
   echo "  日期:   $TODAY"
 
   local tools_to_run=()
-  if [[ "$tool" == "all" ]]; then
+
+  # 如果使用 --installed，从已安装工具列表读取
+  if [[ "$use_installed" == "true" ]]; then
+    if [[ -f "$INSTALLED_TOOLS_FILE" ]] && [[ -s "$INSTALLED_TOOLS_FILE" ]]; then
+      while IFS= read -r line; do
+        [[ -n "$line" ]] && tools_to_run+=("$line")
+      done < "$INSTALLED_TOOLS_FILE"
+      info "已读取已安装工具列表: ${tools_to_run[*]}"
+      if [[ ${#tools_to_run[@]} -eq 0 ]]; then
+        warn "已安装工具列表为空，请先运行 ./scripts/install.sh 安装工具。"
+        exit 0
+      fi
+    else
+      warn "未找到已安装工具列表: $INSTALLED_TOOLS_FILE"
+      warn "请先运行 ./scripts/install.sh 安装工具。"
+      exit 0
+    fi
+  elif [[ "$tool" == "all" ]]; then
     tools_to_run=("antigravity" "gemini-cli" "opencode" "cursor" "trae" "aider" "windsurf" "openclaw" "qwen" "codex" "deerflow" "workbuddy" "hermes" "kiro")
   else
     tools_to_run=("$tool")
