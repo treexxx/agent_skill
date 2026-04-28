@@ -1070,22 +1070,24 @@ main() {
       1)
         # 先保存已安装的工具列表
         save_installed_tools
-        # 只转换已安装的工具
+        # 只转换已安装的工具，输出到用户本地目录
         printf "\n"
         header "正在生成已安装工具的集成文件..."
         printf "\n"
-        if "$SCRIPT_DIR/convert.sh" --installed; then
+        if "$SCRIPT_DIR/convert.sh" --installed --out "$INSTALL_DIR/integrations"; then
           ok "集成文件生成完成！"
         else
           warn "集成文件生成过程中出现一些问题。"
         fi
         ;;
       2)
-        # 转换所有工具
+        # 先保存已安装的工具列表
+        save_installed_tools
+        # 转换所有工具，输出到用户本地目录
         printf "\n"
         header "正在生成所有工具的集成文件..."
         printf "\n"
-        if "$SCRIPT_DIR/convert.sh"; then
+        if "$SCRIPT_DIR/convert.sh" --out "$INSTALL_DIR/integrations"; then
           ok "集成文件生成完成！"
         else
           warn "集成文件生成过程中出现一些问题。"
@@ -1097,12 +1099,12 @@ main() {
         printf "请输入要生成的工具名称（多个用空格分隔）: "
         read -r tool_list
         if [[ -n "$tool_list" ]]; then
-          printf "\n"
-          header "正在生成集成文件..."
-          printf "\n"
-          for tool in $tool_list; do
+        printf "\n"
+        header "正在生成集成文件..."
+        printf "\n"
+        for tool in $tool_list; do
             printf "  处理 %s ...\n" "$tool"
-            "$SCRIPT_DIR/convert.sh" --tool "$tool" 2>&1 | sed 's/^/    /'
+            "$SCRIPT_DIR/convert.sh" --tool "$tool" --out "$INSTALL_DIR/integrations" 2>&1 | sed 's/^/    /'
           done
           ok "所选工具的集成文件生成完成！"
         else
