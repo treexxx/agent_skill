@@ -36,7 +36,7 @@
 
 ## 🚀 快速开始
 
-### 方法一：完整安装
+### 一键安装
 
 ```bash
 git clone https://github.com/treexxx/agent_skill.git
@@ -44,27 +44,22 @@ cd agent_skill
 ./scripts/install.sh
 ```
 
-### 方法二：选择性安装
+安装脚本会自动：
+1. 检测你已安装的 AI 工具
+2. 选择要安装的智能体
+3. 生成对应的集成文件（可选择只生成已安装工具的）
+4. 安装到对应工具
+5. 自动打开本地安装指南
 
-```bash
-# 只安装特定工具的支持
-./scripts/install.sh --tool claude-code
-
-# 支持的参数：
-# --tool claude-code    # Claude Code
-# --tool cursor         # Cursor
-# --tool windsurf       # Windsurf
-# --tool trae           # Trae
-# --tool aider          # Aider
-# --tool workbuddy      # WorkBuddy
-# --tool openclaw       # OpenClaw
+安装目录统一放在 `~/.agent_skill/`：
+```
+~/.agent_skill/
+├── index.html           # 本地安装指南
+├── installed_tools.txt  # 已安装工具记录
+└── integrations/        # 各工具的集成文件
 ```
 
-### 方法三：手动安装
-
-1. 复制对应工具的配置目录
-2. 将技能文件放置到 AI 工具的正确位置
-3. 重启 AI 工具使配置生效
+重启 AI 工具使配置生效。
 
 ## 🛠️ 支持的工具
 
@@ -147,15 +142,28 @@ cd agent_skill
 ```
 agent_skill/
 ├── scripts/              # 安装和转换脚本
-│   ├── install.sh        # 主安装脚本
-│   └── convert.sh       # 格式转换脚本
-├── skills/               # 技能定义文件
-│   ├── engineering-/     # 工程开发类技能
-│   ├── design-/          # 设计创意类技能
-│   ├── marketing-/       # 市场营销类技能
-│   └── ...
-├── index.html            # 技能展示页面
+│   ├── install.sh        # 主安装脚本（交互式安装/卸载）
+│   └── convert.sh        # 格式转换脚本
+├── skills/               # 技能定义源文件（212+）
+│   └── <领域>-<名称>/    # 每个技能一个目录
+│       └── SKILL.md      # 技能定义
+├── html/                 # 技能展示页面
+├── integrations/         # 仓库级集成文件（模板）
 └── README.md            # 本文件
+```
+
+> 安装后文件会复制到用户本地 `~/.agent_skill/` 目录
+
+### 卸载智能体
+
+```bash
+./scripts/install.sh
+```
+选择 **2) 卸载已安装的智能体**，然后选择要卸载的工具。
+
+或者单独卸载指定工具：
+```bash
+./scripts/install.sh --tool claude-code --uninstall
 ```
 
 ## 🌟 社区和资源
@@ -163,6 +171,7 @@ agent_skill/
 - **技能展示**：访问 [index.html](https://treexxx.github.io/agent_skill/) 查看所有技能
 - **问题反馈**：[GitHub Issues](https://github.com/treexxx/agent_skill/issues)
 - **讨论区**：[GitHub Discussions](https://github.com/treexxx/agent_skill/discussions)
+- **项目示例**：访问  https://ai.squp.cn
 
 ## 📄 许可证
 

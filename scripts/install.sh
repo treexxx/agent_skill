@@ -567,6 +567,35 @@ install_html() {
   fi
 }
 
+# --- 安装统一技能入口 SKILL.md ---
+install_hub() {
+  local src="$REPO_ROOT/skills/SKILL.md"
+  local dest="$INSTALL_DIR/SKILL.md"
+
+  if [[ -f "$src" ]]; then
+    mkdir -p "$INSTALL_DIR"
+    cp "$src" "$dest"
+    return 0
+  else
+    warn "未找到统一技能入口 skills/SKILL.md，跳过。"
+    return 1
+  fi
+}
+
+# --- 卸载统一技能入口 ---
+uninstall_hub() {
+  local hub_file="$INSTALL_DIR/SKILL.md"
+
+  if [[ -f "$hub_file" ]]; then
+    rm -f "$hub_file"
+    ok "已卸载统一技能入口 SKILL.md"
+    return 0
+  else
+    dim "  未找到统一技能入口，跳过。"
+    return 1
+  fi
+}
+
 # --- 保存已安装的工具列表 ---
 save_installed_tools() {
   mkdir -p "$INSTALL_DIR"
@@ -1022,6 +1051,9 @@ main() {
       (( count++ )) || true
     done
 
+    # 卸载统一技能入口
+    uninstall_hub
+
     printf "\n"
     ok "完成！已卸载 $count 个工具。"
     printf "\n"
@@ -1123,6 +1155,11 @@ main() {
       if open_installed_html; then
         dim "  已自动打开安装指南页面。"
       fi
+    fi
+
+    # 安装统一技能入口
+    if install_hub; then
+      dim "  已安装统一技能入口到 $INSTALL_DIR/SKILL.md"
     fi
   fi
 }
